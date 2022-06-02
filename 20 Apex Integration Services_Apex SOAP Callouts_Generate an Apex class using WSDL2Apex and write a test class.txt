@@ -1,0 +1,43 @@
+Apex Integration Services > Apex SOAP Callouts > Generate an Apex class using WSDL2Apex and write a test class.
+
+//ParkLocator class
+
+    public class ParkLocator {
+        public static string[] country(String country){
+            ParkService.ParksImplport prk = new ParkService.ParksImplPort();
+            return prk.byCountry(country);
+        }
+    }
+
+//ParkLocatorTest class
+
+@isTest
+public class ParkLocatorTest {
+	@isTest 
+    static void testCallout(){
+        Test.setMock(WebServiceMock.class, new ParkServiceMock());
+        String country = 'USA';
+            System.assertEquals(new List<String>{'Me','You','Her'},ParkLocator.country(country));
+    }
+}
+
+//ParkServiceMockup class
+
+@isTest
+global class ParkServiceMock implements WebServiceMock{
+    global void doInvoke(
+        Object stub,
+            Object request,
+            Map<String, Object> response,
+            String endpoint,
+            String soapAction,
+            String requestName,
+            String responseNS,
+            String responseName,
+        String responseType){
+            parkService.byCountryResponse response_x = new parkService.byCountryResponse();
+            response_x.return_x = new List<String>{'Me','You','Her'};
+                response.put('response_x',response_x);
+        }
+            
+    }
