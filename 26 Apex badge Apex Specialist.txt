@@ -1,0 +1,80 @@
+Apex badge Apex Specialist > CHALLENGE 6 
+Test callout logic
+
+// 1. WarehouseCalloutService.apxc
+
+public with sharing class WarehouseCalloutService {
+ 
+    private static final String WAREHOUSE_URL = 'https://th-superbadge-apex.herokuapp.com/equipment';
+    
+    // complete this method to make the callout (using @future) to the
+    // REST endpoint and update equipment on hand.
+    @future(callout=true)
+    public static void runWarehouseEquipmentSync(){
+        Http http = new Http();
+		HttpRequest request = new HttpRequest();
+		request.setEndpoint(WAREHOUSE_URL);
+		request.setMethod('GET');
+		HttpResponse response = http.send(request);
+		// If the request is successful, parse the JSON response.
+		if (response.getStatusCode() == 200) {
+    		// Deserialize the JSON string into collections of primitive data types.
+    		List<Object> equipments = (List<Object>) JSON.deserializeUntyped(response.getBody());
+            List<Product2> products = new List<Product2>();
+            for(Object o :  equipments){
+                Map<String, Object> mapProduct = (Map<String, Object>)o;
+                Product2 product = new Product2();
+                product.Name = (String)mapProduct.get('name');
+                product.Cost__c = (Integer)mapProduct.get('cost');
+                product.Current_Inventory__c = (Integer)mapProduct.get('quantity');
+                product.Maintenance_Cycle__c = (Integer)mapProduct.get('maintenanceperiod');
+                product.Replacement_Part__c = (Boolean)mapProduct.get('replacement');
+                product.Lifespan_Months__c = (Integer)mapProduct.get('lifespan');
+                product.Warehouse_SKU__c = (String)mapProduct.get('sku');
+                product.ProductCode = (String)mapProduct.get('_id');
+                products.add(product);
+            }
+            if(products.size() > 0){
+                System.debug(products);
+                upsert products;
+            }
+		}
+    }
+ 
+}
+
+// 2. WarehouseCalloutServiceMock.apxc
+
+@isTest
+global class WarehouseCalloutServiceMock implements HttpCalloutMock {
+    // implement http mock callout
+    global HttpResponse respond(HttpRequest request){
+        
+        System.assertEquals('https://th-superbadge-apex.herokuapp.com/equipment', request.getEndpoint());
+        System.assertEquals('GET', request.getMethod());
+        
+    	// Create a fake response
+		HttpResponse response = new HttpResponse();
+        response.setHeader('Content-Type', 'application/json');
+		response.setBody('[{"_id":"55d66226726b611100aaf741","replacement":false,"quantity":5,"name":"Generator 1000 kW","maintenanceperiod":365,"lifespan":120,"cost":5000,"sku":"100003"}]');
+        response.setStatusCode(200);
+        return response;
+    }
+}
+
+// 3. WarehouseCalloutServiceTest.apxc
+
+@isTest
+private class WarehouseCalloutServiceTest {
+  // implement your mock callout test here
+	@isTest
+    static void WarehouseEquipmentSync(){
+        Test.startTest();
+        // Set mock callout class 
+        Test.setMock(HttpCalloutMock.class, new WarehouseCalloutServiceMock()); 
+        // This causes a fake response to be sent from the class that implements HttpCalloutMock. 
+        WarehouseCalloutService.runWarehouseEquipmentSync();
+        Test.stopTest();        
+        System.assertEquals(1, [SELECT count() FROM Product2]);        
+    }
+}

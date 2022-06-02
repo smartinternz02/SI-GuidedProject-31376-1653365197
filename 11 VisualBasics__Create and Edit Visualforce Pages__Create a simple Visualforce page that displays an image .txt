@@ -1,0 +1,6 @@
+Visual Basics > Create & Edit Visualforce Pages >
+Create a simple Visualforce page that displays an image
+
+<apex:page showHeader="false">
+    <apex:image url="https://developer.salesforce.com/files/salesforce-developer-network-logo.png"/>
+</apex:page>
