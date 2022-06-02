@@ -1,4 +1,0 @@
-Visualforce  Basic > Use a static resource to display an image on a Visualforce Page
-<apex:page >
-    <apex:image alt="eye" title="eye" url="{!URLFOR($Resource.vfimagetest, 'cats/kitten1.jpg')}"/>
-</apex:page>
